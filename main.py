@@ -1,2 +1,5 @@
+from server import views
 
-print("hello world")
+if __name__ == '__main__':
+    views.launch()
+

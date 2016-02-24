@@ -1,9 +1,29 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
+        <meta charset="UTF-8">
         <title>{{title}} - BGgod </title>
+        {% block script%}
+        {% endblock %}
     </head>
     <body>
         <h1>Hello, World!</h1>
         <h1>This is Werewolf's World!</h1>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+                 </ul>
+             {% endif %}
+        {% endwith %}
+
+        {% block content%}
+        {% endblock %}
+
+        {%if 'username' in session%}
+            <button onClick="location.href='/logout'" >Logout</button>
+        {%endif%}
     </body>
 </html>

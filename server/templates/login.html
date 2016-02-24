@@ -1,12 +1,14 @@
-<!-- extend from base layout -->
 
 
+{% extends "index.html" %}
+
+{%block content%}
 <h1>Sign In</h1>
+
 <form action="/signup" method="post">
     Username : <input type="text" name="username" /><br />
     Password : <input type="password" name="password" /><br/>
     <p><input type=submit value=Login>
-    {%if 'username' in session %}
-        <p><input type=submit value=Logout>
-    {%endif%}
 </form>
+
+{%endblock%}

@@ -27,8 +27,6 @@ def signup():
 
 @app.route('/logout')
 def logout():
-    print request.method
-    session.pop('username', None)
-    session.pop('password', None)
+    session.clear()
     flash('logout succesfully')
     return redirect(url_for('login'))

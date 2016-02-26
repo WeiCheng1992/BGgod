@@ -1,0 +1,26 @@
+{% extends "index.html" %}
+
+{% block head%}
+
+<a name = "{{room_id}}" value = "{{room_id}}"/>
+{% endblock %}
+
+
+{% block script %}
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script type="text/javascript" src="../static/js/main.js"></script>
+    <script type="text/javascript" charset="utf-8"></script>
+
+{% endblock %}
+
+{%block content%}
+
+<h1>Welcome to Room: {{room_id}}</h1>
+<h1>Hello {{session['useranem']}} you are {{role}} id: {{ID}} </h1>
+<textarea id="dial" rows="10" cols="30"></textarea><br/>
+<form id="input" action="#">
+    input: <input id="input_content" type="text" />
+    <input type=submit value=Submit><br />
+</form>
+{%endblock%}

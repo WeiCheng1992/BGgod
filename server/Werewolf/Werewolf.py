@@ -11,7 +11,7 @@ class Werewolf:
     __cop = 0
     __couple = []
 
-    def __int__(self, people, wolf, villager, cupid, prophet, guard, hunter, witch):
+    def __init__(self, people, wolf, villager, cupid, prophet, guard, hunter, witch):
 
         if people != wolf + villager + cupid + prophet + guard + hunter + witch:
             raise Exception('Bad parameter')
@@ -26,10 +26,10 @@ class Werewolf:
 
         shuffle(self.__list)
 
-    def getrole(self, index):
+    def get_role(self, index):
         return self.__list[index]
 
-    def setcouple(self, couple):
+    def set_couple(self, couple):
         self.__couple = couple
 
     def __vote(self, votes):
@@ -45,7 +45,7 @@ class Werewolf:
 
         return l[0][0]
 
-    def votecop(self, votes):
+    def vote_cop(self, votes):
         assert len(votes) == len(self.__list)
 
         d = dict()
@@ -57,10 +57,10 @@ class Werewolf:
 
         return __cop
 
-    def setcop(self, index):
+    def set_cop(self, index):
         self.__cop = index
 
-    def votedead(self, votes):
+    def vote_dead(self, votes):
         len(filter(lambda x : x != Role.DEAD, self.__list)) == len(votes)
         d = dict()
 
@@ -72,10 +72,11 @@ class Werewolf:
 
         return self.__vote(d)
 
-    def setdead(self, index):
+    def set_dead(self, index):
         self.__list[index] = Role.DEAD
 
-
+    def get_people(self):
+        return len(self.__list)
 
 
 

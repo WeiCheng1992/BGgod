@@ -1,0 +1,15 @@
+session 管理
+1. logout :
+    删除session 中的用户名和密码,  ##UserId?
+    !!删除userid,密码,不删用户名
+2. login :
+    添加yonghuming,密码,userid的session
+    检查该用户是否处于一个游戏,
+        假如有直接redirect // 这个配对存储在内存的一个table中 redis?
+        没有则进入redict,createuser
+3.
+
+
+1. server 点对点发
+2. server 广播
+3. 游戏逻辑

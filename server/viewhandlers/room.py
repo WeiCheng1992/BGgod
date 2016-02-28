@@ -1,17 +1,24 @@
-from flask import render_template, session, request ,redirect , url_for ,flash
+from flask import render_template, session, request, redirect, url_for, flash
 from server import app
 from server import socketio
 from server.Werewolf import GameOrdinator
-from server.Werewolf.GameOrdinator import get_channel ,ROOMS
-from flask_socketio import join_room, leave_room , send,emit
+from server.Werewolf.GameOrdinator import get_channel, ROOMS
+from flask_socketio import join_room, leave_room, send, emit
 
-@app.route('/OpenRoom', methods = ['GET'])
+
+@app.route('/open_room', methods=['GET'])
 def open_room():
+    if 'uid' not in session:
+        return redirect(url_for('login'))
+
     return render_template('OpenRoom.html')
 
 
-@app.route('/createroom', methods = ['POST', 'GET'])
+@app.route('/create_room', methods=['POST', 'GET'])
 def create_room():
+    if 'uid' not in session:
+        return redirect(url_for('login'))
+
     people = int(request.form.get('people', 0))
     wolf = int(request.form.get('wolf', 0))
     villager = int(request.form.get('villager', 0))
@@ -22,39 +29,68 @@ def create_room():
     hunter = 0 if request.form.get('hunter', 0) == 0 else 1
     witch = 0 if request.form.get('witch', 0) == 0 else 1
 
-    room_num = GameOrdinator.create_room(people, wolf, villager, cupid, prophet, guard, hunter, witch)
+    room_id = GameOrdinator.create_room(people, wolf, villager, cupid, prophet, guard, hunter, witch)
 
-    return redirect("/room/" + str(room_num))
+    return redirect(url_for('enter_room', room_id = room_id))
 
 
-@app.route('/room/<room_id>')
-def room(room_id):
-    if 'user_id' not in session and ('room_id' not in session or session['room_id'] != room_id):
-        ID, role = GameOrdinator.enter_room(int(room_id),session['username'])
+@app.route('/enter_room/<int:room_id>')
+def enter_room(room_id):
+    if 'uid' not in session:
+        return redirect(url_for('login'))
+
+    userinfo = GameOrdinator.get_userinfo(session['uid'])
+
+    if userinfo is not None:
+        flash("your already have a game. Help you to indirect to it")
+        return redirect(url_for('room', room_id=userinfo['room_id']))
+
+    play_id, role = GameOrdinator.enter_room(int(room_id), session['uid'])
+
+    if play_id is None:
+        flash ("no such room!")
+        return redirect(url_for('open_room'))
+    elif play_id == -1:
+        flash ("The room is full of people!")
+        return redirect(url_for('open_room'))
     else:
-        ID = session['user_id']
-        role = ROOMS[session['room_id']].get_role(ID)
+        return redirect(url_for('room',room_id = room_id))
 
-    if ID is None :
-        return "no such room"
-    elif ID == -1 :
-        return "Room is full of people"
-    else :
-        session['room_id'] = int(room_id)
-        session['user_id'] = int(ID)
-        return render_template("room.html",
-                               ID = ID,
-                               role = role,
-                               room_id = room_id)
+
+@app.route('/room/<int:room_id>')
+def room(room_id):
+    if 'uid' not in session:
+        return redirect(url_for('login'))
+
+    userinfo = GameOrdinator.get_userinfo(session['uid'])
+
+    if userinfo is None:
+        flash("You are not in the opening game!")
+        return redirect(url_for('open_room'))
+    else:
+        if userinfo['room_id'] != room_id:
+            flash("You have another ongoing game!,help you enter it!")
+            return redirect(url_for('room', room_id=userinfo['room_id']))
+        else:
+            return render_template("room.html",
+                                   play_id=userinfo['play_id'],
+                                   role=userinfo['role'],
+                                   room_id=room_id)
 
 
 @socketio.on('join_user')
-def enter_room():
+def join_chatroom():
+    if 'uid' not in session:
+        return redirect(url_for('login'))
+
+    userinfo = GameOrdinator.get_userinfo(session['uid'])
     # big room
-    join_room(get_channel(session['room_id'], None))
+    join_room(get_channel(userinfo['room_id'], None))
     # personal room
-    join_room(get_channel(session['room_id'], session['user_id']))
-    send("hello all", room=get_channel(session['room_id'], None))
-    send("hello you", room=get_channel(session['room_id'], session['user_id']))
+    join_room(get_channel(userinfo['room_id'], userinfo['play_id']))
+    emit("greeting",
+         {'username': session['username'], 'play_id': userinfo['play_id']},
+         json = True,
+         room=get_channel(userinfo['room_id'], None))
 
-
+    send("hello you", room=get_channel(userinfo['room_id'], userinfo['play_id']))

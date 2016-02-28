@@ -10,6 +10,7 @@ class Werewolf:
     __list = []
     __cop = 0
     __couple = []
+    __userlist = []
 
     def __init__(self, people, wolf, villager, cupid, prophet, guard, hunter, witch):
 
@@ -75,8 +76,16 @@ class Werewolf:
     def set_dead(self, index):
         self.__list[index] = Role.DEAD
 
-    def get_people(self):
+    def get_peoplenum(self):
         return len(self.__list)
 
+    def get_usernum(self):
+        return len(self.__userlist)
 
+    def add_user(self, uid):
+        if len(self.__userlist) >= len(self.__list):
+            return None
+        else:
+            self.__userlist.append(uid)
+            return len(self.__userlist) - 1
 

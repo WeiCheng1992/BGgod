@@ -4,22 +4,19 @@ $(document).ready(function(){
     // the socket.io documentation recommends sending an explicit package upon connection
     // this is specially important when using the global namespace
     var socket = io.connect("http://" + document.domain + ':' + location.port);
+    socket.emit("join_user");
+
     socket.on("connect", function() {
-
-        socket.emit("join_user");
-
-
 
     });
 
-    socket.on("new_user", function(msg) {
-        if (document.getElementById("username").innerHTML != msg["user"]) {
-            $("#users").append("<span>"+msg["user"]+"</span>");
-        }
+    socket.on("greeting", function(msg) {
+        document.getElementById("dial").innerHTML +=  "Welcome " + msg['username'] +
+        "  id: " + msg['play_id'] +  "\n";
     });
 
     socket.on("message", function(msg) {
-        document.getElementById("dial").innerHTML += "\n" + msg;
+        document.getElementById("dial").innerHTML +=  msg + "\n";
     });
 
 
@@ -27,8 +24,10 @@ $(document).ready(function(){
         var input = document.getElementById("input_content").value ;
         document.getElementById("input_content").value = "" ;
 
-        document.getElementById("dial").innerHTML += "\n" + input;
-        socket.send(input);
+        if(input != ""){
+            document.getElementById("dial").innerHTML +=  input + "\n";
+            socket.send(input);
+        }
         return false;
     });
 });

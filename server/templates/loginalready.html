@@ -4,4 +4,8 @@
 {%block content%}
 <h1>Hello {{name}}</h1>
 <button onClick="location.href='/open_room'" >Create Room!</button><br/>
+<form action="/enter_room" method="post">
+    Room No. : <input type="number" name="room_id" /><br />
+    <p><input type=submit value="enter Room!">
+</form>
 {%endblock%}

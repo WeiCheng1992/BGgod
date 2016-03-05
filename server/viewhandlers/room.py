@@ -34,6 +34,15 @@ def create_room():
     return redirect(url_for('enter_room', room_id = room_id))
 
 
+@app.route('/enter_room',methods= ['POST'])
+def go_room():
+    if len(request.form.get('room_id','')) >0:
+        return redirect(url_for('enter_room', room_id = request.form.get('room_id','')))
+
+    flash("invalid room number!")
+    return render_template("loginalready.html",name = session['username'])
+
+
 @app.route('/enter_room/<int:room_id>')
 def enter_room(room_id):
     if 'uid' not in session:
@@ -93,4 +102,3 @@ def join_chatroom():
          json = True,
          room=get_channel(userinfo['room_id'], None))
 
-    send("hello you", room=get_channel(userinfo['room_id'], userinfo['play_id']))

@@ -5,13 +5,11 @@
 {%block content%}
 <h1>Sign In</h1>
 
-<form action="/signon" method="post">
+<form action="/signup" method="post">
     Username : <input type="text" name="username" /><br />
     Password : <input type="password" name="password" /><br/>
-    <p><input type=submit value="Sign on">
+    Password Again: <input type="password" name="again" /><br/>
+    <p><input type=submit value="Sign up!">
 </form>
-
-<button onClick="location.href='/signup'" >Sign up!</button>
-<br/>
 
 {%endblock%}

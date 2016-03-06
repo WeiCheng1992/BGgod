@@ -7,7 +7,9 @@ app.debug = True
 
 socketio = SocketIO(app)
 
-from server import viewhandlers
+MAX_PEOPLE = 15
+
+from server import controller
 
 
 

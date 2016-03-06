@@ -20,6 +20,11 @@ $(document).ready(function(){
     });
 
 
+    socket.on("alert", function(msg) {
+        alert(msg['msg']);
+    });
+
+
     $("form#input").submit(function(event) {
         var input = document.getElementById("input_content").value ;
         document.getElementById("input_content").value = "" ;
@@ -30,4 +35,12 @@ $(document).ready(function(){
         }
         return false;
     });
+
+
+    $("form#begin").submit(function(event) {
+        socket.emit("begin",room_id);
+        return false;
+    });
 });
+
+

@@ -1,7 +1,7 @@
 
 from flask import render_template, session, request ,redirect , url_for ,flash
 from server import app
-from server.Werewolf.GameOrdinator import USERS
+from server.werewolf.WerewolfManager import USERS
 from server.model import SqliteDB
 
 

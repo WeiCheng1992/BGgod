@@ -1,7 +1,9 @@
-from enum import Enum
-from random import shuffle
 
-Role = Enum('Role', ('WOLF', 'VILLAGER', 'CUPID', 'PROPHET', 'GUARD', 'HUNTER', 'WITCH', 'DEAD'))
+from random import shuffle
+from server.werewolf.character import Cupid,Guard,Hunter,Prophet,Witch,Wolf,Villager
+from server.controller.roomIO import notice
+import threading
+
 
 COPVOTE = 0.5
 
@@ -11,70 +13,36 @@ class Werewolf:
     __cop = 0
     __couple = []
     __userlist = []
+    __turn = 0
+    __stage = None
+    __Day_or_night = None
+    __has_cupid = False
+    __has_prophet = False
+    __has_guard = False
+    __has_hunter = False
+    __has_witch = False
+    __cv = None
+    __context = dict()
+    __room_id = 0
 
-    def __init__(self, people, wolf, villager, cupid, prophet, guard, hunter, witch):
+    def __init__(self,room_id, people, wolf, villager, cupid, prophet, guard, hunter, witch):
 
         if people != wolf + villager + cupid + prophet + guard + hunter + witch:
             raise Exception('Bad parameter')
 
-        self.__list += [Role.WOLF for __ in range(wolf)]
-        self.__list += [Role.VILLAGER for __ in range(villager)]
-        self.__list += [Role.CUPID for __ in range(cupid)]
-        self.__list += [Role.PROPHET for __ in range(prophet)]
-        self.__list += [Role.GUARD for __ in range(guard)]
-        self.__list += [Role.HUNTER for __ in range(hunter)]
-        self.__list += [Role.WITCH for __ in range(witch)]
-
+        self.__list += [Wolf() for __ in range(wolf)]
+        self.__list += [Villager() for __ in range(villager)]
+        self.__list += [Cupid() for __ in range(cupid)]
+        self.__list += [Prophet() for __ in range(prophet)]
+        self.__list += [Guard() for __ in range(guard)]
+        self.__list += [Hunter() for __ in range(hunter)]
+        self.__list += [Witch() for __ in range(witch)]
         shuffle(self.__list)
+        self.__cv = threading.Condition(threading.Lock())
+        self.__room_id = room_id
 
     def get_role(self, index):
-        return self.__list[index]
-
-    def set_couple(self, couple):
-        self.__couple = couple
-
-    def __vote(self, votes):
-        l = [(id, vote) for id, vote in votes.items()]
-
-        l.sort(key = lambda x : x[1])
-
-        if len(l) == 1:
-            return l[0][0]
-
-        if l[0][1] == l[1][1]:
-            return -1
-
-        return l[0][0]
-
-    def vote_cop(self, votes):
-        assert len(votes) == len(self.__list)
-
-        d = dict()
-
-        for vote in votes:
-            d[vote] = d.get(vote, 0) + 1
-
-        __cop = self.__vote(d)
-
-        return __cop
-
-    def set_cop(self, index):
-        self.__cop = index
-
-    def vote_dead(self, votes):
-        len(filter(lambda x : x != Role.DEAD, self.__list)) == len(votes)
-        d = dict()
-
-        for vote in votes:
-            if vote != -1:
-                d[vote] = d.get(vote, 0) + 1
-
-        d[votes[self.__cop]] = d.get(votes[self.__cop], 0) + COPVOTE
-
-        return self.__vote(d)
-
-    def set_dead(self, index):
-        self.__list[index] = Role.DEAD
+        return type(self.__list[index])
 
     def get_peoplenum(self):
         return len(self.__list)
@@ -89,3 +57,35 @@ class Werewolf:
             self.__userlist.append(uid)
             return len(self.__userlist) - 1
 
+    def get_user(self,index):
+        return self.__userlist[index]
+
+    def set_info(self, info):
+        if self.__stage is None:
+            return
+
+        info = info.split()
+        self.__cv.require()
+
+        if self.__stage not in self.__context:
+            self.__context[self.__stage] = []
+
+        self.__context[self.__stage] += info
+
+        self.__cv.notify_all()
+
+        self.__cv.release()
+
+    def start(self):
+        self.__turn = 0
+
+        cu = list(filter(lambda x : isinstance(x, Cupid), self.__list))
+        if len(cu) == 0:
+            return
+
+        else:
+            self.__couple = cu[0].take_action(self.__context, self.__cv,self.__room_id, self.__list.indexOf(cu[0]))
+            self.__stage = None
+
+    def next_night(self):
+        pass

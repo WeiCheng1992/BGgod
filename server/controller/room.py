@@ -1,9 +1,6 @@
 from flask import render_template, session, request, redirect, url_for, flash
 from server import app
-from server import socketio
-from server.Werewolf import GameOrdinator
-from server.Werewolf.GameOrdinator import get_channel, ROOMS
-from flask_socketio import join_room, leave_room, send, emit
+from server.werewolf import WerewolfManager
 
 
 @app.route('/open_room', methods=['GET'])
@@ -29,7 +26,7 @@ def create_room():
     hunter = 0 if request.form.get('hunter', 0) == 0 else 1
     witch = 0 if request.form.get('witch', 0) == 0 else 1
 
-    room_id = GameOrdinator.create_room(people, wolf, villager, cupid, prophet, guard, hunter, witch)
+    room_id = WerewolfManager.create_room(people, wolf, villager, cupid, prophet, guard, hunter, witch)
 
     return redirect(url_for('enter_room', room_id = room_id))
 
@@ -48,13 +45,13 @@ def enter_room(room_id):
     if 'uid' not in session:
         return redirect(url_for('login'))
 
-    userinfo = GameOrdinator.get_userinfo(session['uid'])
+    userinfo = WerewolfManager.get_userinfo(session['uid'])
 
     if userinfo is not None:
         flash("your already have a game. Help you to indirect to it")
         return redirect(url_for('room', room_id=userinfo['room_id']))
 
-    play_id, role = GameOrdinator.enter_room(int(room_id), session['uid'])
+    play_id, role = WerewolfManager.enter_room(int(room_id), session['uid'], session['username'])
 
     if play_id is None:
         flash ("no such room!")
@@ -71,7 +68,7 @@ def room(room_id):
     if 'uid' not in session:
         return redirect(url_for('login'))
 
-    userinfo = GameOrdinator.get_userinfo(session['uid'])
+    userinfo = WerewolfManager.get_userinfo(session['uid'])
 
     if userinfo is None:
         flash("You are not in the opening game!")
@@ -87,18 +84,4 @@ def room(room_id):
                                    room_id=room_id)
 
 
-@socketio.on('join_user')
-def join_chatroom():
-    if 'uid' not in session:
-        return redirect(url_for('login'))
-
-    userinfo = GameOrdinator.get_userinfo(session['uid'])
-    # big room
-    join_room(get_channel(userinfo['room_id'], None))
-    # personal room
-    join_room(get_channel(userinfo['room_id'], userinfo['play_id']))
-    emit("greeting",
-         {'username': session['username'], 'play_id': userinfo['play_id']},
-         json = True,
-         room=get_channel(userinfo['room_id'], None))
 

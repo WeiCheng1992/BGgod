@@ -11,7 +11,7 @@ class Cupid(Character):
         notice("Please choose 2 player to be couples.\n(type 2 numbers splited by space)",room_id, play_id)
 
         ans = []
-        stage = self.get_stage()
+        stage = self.get_stage() + ':' + str(play_id)
         cv.acquire()
         while True:
             if stage not in context:
@@ -19,9 +19,11 @@ class Cupid(Character):
             else:
                 if len(context[stage]) < 2:
                     notice('Please choose 2 players', room_id, play_id)
+                    del context[stage]
                     cv.wait()
                 elif context[stage][0] == context[stage][1]:
                     notice('Please choose 2 different player', room_id, play_id)
+                    del context[stage]
                     cv.wait()
                 else:
                     ans = context[stage][0:2]

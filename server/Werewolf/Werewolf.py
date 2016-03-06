@@ -1,7 +1,7 @@
 
 from random import shuffle
 from server.werewolf.character import Cupid,Guard,Hunter,Prophet,Witch,Wolf,Villager
-from server.controller.roomIO import notice
+from server.controller.roomIO import notice,deadnote
 import threading
 
 
@@ -76,16 +76,111 @@ class Werewolf:
 
         self.__cv.release()
 
+    def __get_characters(self, role):
+        ans = []
+        for i in range(len(self.__list)):
+            if isinstance(self.__list[i], role):
+                ans.append((self.__list[i], i))
+
+        return ans
+
+    def __handle_dead(self,deads):
+        for dead in deads:
+            if dead in self.__couple:
+                deads += self.couple
+
+        deads = list(set(deads))
+
+        for dead in deads:
+            deadnote(str(dead), self.__room_id, dead)
+
+        n = []
+        for dead in deads:
+            if isinstance(self.__list[dead],Hunter):
+                self.__stage = self.__list[dead].get_stage()
+                n += self.__list[dead].dead_action(self.__context,self.__cv,self.__room_id,dead)
+
+        if len(n) == 1:
+            if n[0] in self.__couple:
+                if n[0] == self.__couple[0]:
+                    n += self.__couple[1]
+                else:
+                    n += self.__couple[0]
+
+        for dead in n:
+            deadnote(str(dead), self.__room_id, dead)
+
+        deads += n
+        for dead in deads:
+            self.__list[dead].dead()
+
     def start(self):
         self.__turn = 0
 
-        cu = list(filter(lambda x : isinstance(x, Cupid), self.__list))
-        if len(cu) == 0:
+        cupid = self.__get_characters(Cupid)
+        if len(cupid) == 0:
             return
 
         else:
-            self.__couple = cu[0].take_action(self.__context, self.__cv,self.__room_id, self.__list.indexOf(cu[0]))
+            self.__stage = cupid[0][0].get_stage()
+            self.__couple = cupid[0][0].take_action(self.__context, self.__cv, self.__room_id, cupid[0][1])
             self.__stage = None
 
     def next_night(self):
-        pass
+
+        # wolf killing
+        wolves = self.__get_characters(Wolf)
+        ans = []
+        self.__stage = wolves[0][0].get_stage()
+        while True:
+            for wolf in wolves:
+                if wolf[0].is_alive():
+                    ans.append(wolf[0].take_action(self.__context, self.__cv, self.__room_id, wolf[1]))
+
+            if len(set(ans)) != 1:
+                for wolf in wolves:
+                    if wolf[0].is_alive():
+                        notice("please kill One person!",self.__room_id, wolf[1])
+            else:
+                ans = list(set(ans))
+                break
+
+        dead = ans[0]
+
+        # guard round
+        guard = self.__get_characters(Guard)
+        if len(guard) == 1:
+            self.__stage = guard[0][0].get_stage()
+            guard[0][0].take_action(self.__context, self.__cv,self.__room_id,guard[0][1])
+
+        # prophet round
+        prophet = self.__get_characters(Prophet)
+        if len(prophet) == 1:
+            self.__stage = prophet[0][0].get_stage()
+            ans = prophet[0][0].take_action(self.__context, self.__cv,self.__room_id,prophet[0][1])
+            if ans is not None:
+                if isinstance(self.__list[ans[0]], Wolf):
+                    notice("He is a bad man!", self.__room_id, prophet[0][1])
+                else:
+                    notice("He is a good man!", self.__room_id, prophet[0][1])
+
+        # witch round
+        witch = self.__get_characters(Witch)
+        if len(witch) == 1:
+            self.__stage = witch[0][0].get_stage()
+            self.__context['to be dead'] = dead
+            ans = witch[0][0].take_action(self.__context,self.__cv,self.__room_id,witch[0][1])
+
+        #final calculate
+        if (guard[0][0].get_guardee() == dead or ans[0] == 1) and ans[1] == -1:
+            pass
+        elif guard[0][0].get_guardee() == dead or ans[0] == 1 :
+            self.__handle_dead([ans[1]])
+        elif ans[1] != -1:
+            self.__handle_dead([dead, ans[1]])
+        else:
+            self.__handle_dead([dead])
+
+        self.__context.clear()
+
+

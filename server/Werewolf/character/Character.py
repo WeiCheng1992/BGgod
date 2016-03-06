@@ -12,7 +12,7 @@ class Character:
     def is_alive(self):
         return self.__is_alive
 
-    def dead_function(self):
+    def dead_action(self, context, cv, room_id = None, play_id = None):
         return []
 
     def take_action(self, context, cv, room_id = None, play_id = None):
@@ -23,4 +23,6 @@ class Character:
 
     def get_stage(self):
         return self.__STAGE
+
+
 

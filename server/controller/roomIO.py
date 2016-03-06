@@ -25,6 +25,9 @@ def broadcast(msg, room_id):
     emit('broadcast', {'msg': msg}, room=get_channel(room_id))
 
 
+def deadnote(msg, room_id,play_id = None):
+    emit('deadnote', {'msg': msg}, room=get_channel(room_id,play_id))
+
 @socketio.on('join_user')
 def join_chatroom():
     if 'uid' not in session:

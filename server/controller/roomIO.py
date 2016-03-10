@@ -1,4 +1,4 @@
-from server.werewolf.WerewolfManager import  game_begin
+from server.werewolf.WerewolfManager import  game_begin,start_night
 from flask import  session, redirect, url_for
 from flask_socketio import join_room, emit
 from server import socketio
@@ -45,4 +45,9 @@ def begin(room_id):
     t = threading.Thread(target=game_begin, args=(int(room_id), ))
     t.start()
 
+
+@socketio.on('night')
+def night(room_id):
+    t = threading.Thread(target=start_night, args=(int(room_id), ))
+    t.start()
 

@@ -56,11 +56,11 @@ def game_begin(room_id):
 
     for i in range((ROOMS[room_id].get_usernum())):
         user = USERS[ROOMS[room_id].get_user(i)]
-        broadcast("username: " + user['username'] + " id: " + i, room_id)
+        broadcast("username: " + user['username'] + " id: " + str(i), room_id)
 
     ROOMS[room_id].start()
 
 
-
-
+def start_night(room_id):
+    ROOMS[room_id].night()
 

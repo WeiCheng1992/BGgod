@@ -1,3 +1,7 @@
+from server.controller.roomIO import notice
+import threading
+
+
 class Character:
     __is_alive = False
     __STAGE = None
@@ -23,6 +27,27 @@ class Character:
 
     def get_stage(self):
         return self.__STAGE
+
+    def vote(self,stage, context, cv, room_id = None, play_id = None):
+
+        notice("Please vote for "+stage, room_id, play_id)
+
+        ans = None
+
+        stage += str(play_id)
+
+        cv.acquire()
+        while True:
+            if stage not in context:
+                cv.wait()
+            else:
+                ans = context[stage][0]
+                del context[stage]
+                break
+
+        cv.release()
+
+        return ans
 
 
 

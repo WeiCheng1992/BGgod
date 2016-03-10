@@ -1,11 +1,14 @@
-
-from random import shuffle
-from server.werewolf.character import Cupid,Guard,Hunter,Prophet,Witch,Wolf,Villager
-from server.controller.roomIO import notice,deadnote,broadcast
 import threading
+from random import shuffle
 
-
-COPVOTE = 0.5
+from server.utils.socket_utils import notice, broadcast, deadnote
+from server.game.werewolf.player.cupid import Cupid
+from server.game.werewolf.player.guard import Guard
+from server.game.werewolf.player.hunter import Hunter
+from server.game.werewolf.player.prophet import Prophet
+from server.game.werewolf.player.villager import Villager
+from server.game.werewolf.player.witch import Witch
+from server.game.werewolf.player.wolf import Wolf
 
 
 class Werewolf:
@@ -25,18 +28,18 @@ class Werewolf:
     __context = dict()
     __room_id = 0
 
-    def __init__(self,room_id, people, wolf, villager, cupid, prophet, guard, hunter, witch):
+    def __init__(self, room_id, people, wolf, villager, cupid, prophet, guard, hunter, witch):
 
         if people != wolf + villager + cupid + prophet + guard + hunter + witch:
             raise Exception('Bad parameter')
 
-        self.__list += [Wolf() for __ in range(wolf)]
-        self.__list += [Villager() for __ in range(villager)]
-        self.__list += [Cupid() for __ in range(cupid)]
-        self.__list += [Prophet() for __ in range(prophet)]
-        self.__list += [Guard() for __ in range(guard)]
-        self.__list += [Hunter() for __ in range(hunter)]
-        self.__list += [Witch() for __ in range(witch)]
+        self.__list += [Wolf() for _ in range(wolf)]
+        self.__list += [Villager() for _ in range(villager)]
+        self.__list += [Cupid() for _ in range(cupid)]
+        self.__list += [Prophet() for _ in range(prophet)]
+        self.__list += [Guard() for _ in range(guard)]
+        self.__list += [Hunter() for _ in range(hunter)]
+        self.__list += [Witch() for _ in range(witch)]
         shuffle(self.__list)
         self.__cv = threading.Condition(threading.Lock())
         self.__room_id = room_id
@@ -57,10 +60,10 @@ class Werewolf:
             self.__userlist.append(uid)
             return len(self.__userlist) - 1
 
-    def get_user(self,index):
+    def get_user(self, index):
         return self.__userlist[index]
 
-    def set_info(self, info,play_id):
+    def set_info(self, info, play_id):
         if self.__stage is None:
             return
 
@@ -68,9 +71,9 @@ class Werewolf:
         self.__cv.require()
 
         if self.__stage not in self.__context:
-            self.__context[self.__stage+str(play_id)] = []
+            self.__context[self.__stage + str(play_id)] = []
 
-        self.__context[self.__stage+str(play_id)] += info
+        self.__context[self.__stage + str(play_id)] += info
 
         self.__cv.notify_all()
 
@@ -84,7 +87,7 @@ class Werewolf:
 
         return ans
 
-    def __handle_dead(self,deads):
+    def __handle_dead(self, deads):
         for dead in deads:
             if self.__couple is not None and dead in self.__couple:
                 deads += self.__couple
@@ -97,9 +100,9 @@ class Werewolf:
 
         n = []
         for dead in deads:
-            if isinstance(self.__list[dead],Hunter):
+            if isinstance(self.__list[dead], Hunter):
                 self.__stage = self.__list[dead].get_stage()
-                n += self.__list[dead].dead_action(self.__context,self.__cv,self.__room_id,dead)
+                n += self.__list[dead].dead_action(self.__context, self.__cv, self.__room_id, dead)
 
         if len(n) == 1:
             if self.__couple is not None and n[0] in self.__couple:
@@ -114,19 +117,19 @@ class Werewolf:
 
         deads += n
         for dead in deads:
-            notice("No."+str(dead) + " dead.",self.__room_id)
+            notice('No.' + str(dead) + ' dead.', self.__room_id)
             self.__list[dead].dead()
 
         win = self.__is_win()
         if win is None:
-            broadcast("Game ends. " + str(win) + " win!",self.__room_id)
+            broadcast('Game ends. ' + str(win) + ' win!', self.__room_id)
         else:
             if self.__cop in deads:
-                broadcast("cop dead. Must set a new cop",self.__room_id)
-                self.__stage = "setting cop"
-                self.__cop = self.__list[self.__cop].vote(self.__stage,self.__context,self.__cv,self.__room_id,self.__cop)
-                broadcast("new cop is No."+str(self.__cop),self.__room_id)
-
+                broadcast('cop dead. Must set a new cop', self.__room_id)
+                self.__stage = 'setting cop'
+                self.__cop = self.__list[self.__cop].vote(self.__stage, self.__context, self.__cv, self.__room_id,
+                                                          self.__cop)
+                broadcast('new cop is No.' + str(self.__cop), self.__room_id)
 
     def __is_win(self):
         ans = []
@@ -138,61 +141,60 @@ class Werewolf:
             return ans
 
         if len(ans) == 2 and self.__couple is not None:
-            if ans[0]*ans[1] == self.__couple[0]*self.__couple[1] and sum(ans) == sum(self.__couple):
+            if ans[0] * ans[1] == self.__couple[0] * self.__couple[1] and sum(ans) == sum(self.__couple):
                 return ans
 
-        for alive in filter(lambda x : x.is_alive(),self.__list):
-            if not isinstance(alive,Wolf):
+        for alive in filter(lambda x: x.is_alive(), self.__list):
+            if not isinstance(alive, Wolf):
                 return None
 
         return ans
 
-    def __vote_wrapper(self,func, sself ,play_id,ans,stage = None):
+    def __vote_wrapper(self, func, sself, play_id, ans, stage=None):
 
         if stage is None:
-            ans[play_id] = func(sself,self.__context,self.__cv,self.__room_id,play_id)[0]
+            ans[play_id] = func(sself, self.__context, self.__cv, self.__room_id, play_id)[0]
         else:
-            ans[play_id] = func(sself,stage,self.__context,self.__cv,self.__room_id,play_id)
+            ans[play_id] = func(sself, stage, self.__context, self.__cv, self.__room_id, play_id)
 
-    def __vote_helper(self,funcs, selfs, play_ids, weights, isOne,stage = None):
+    def __vote_helper(self, funcs, selfs, play_ids, weights, isone, stage=None):
         ans = dict()
         threads = []
 
         for i in range(len(funcs)):
-            threads.append(threading.Thread(target = self.__vote_wrapper,args = (self,funcs[i], selfs[i], play_ids[i],ans,stage)))
+            threads.append(
+                threading.Thread(target=self.__vote_wrapper, args=(self, funcs[i], selfs[i], play_ids[i], ans, stage)))
 
             threads[-1].start()
 
         for thread in threads:
             thread.join()
 
-        if isOne and len(set(ans.values())) != 1:
+        if isone and len(set(ans.values())) != 1:
             return None
 
         votes = []
         for i in range(len(funcs)):
-            votes += [ ans[play_ids[i]] for _ in range(weights[i]) ]
+            votes += [ans[play_ids[i]] for _ in range(weights[i])]
 
         result = dict()
 
         for vote in votes:
-            result[vote] = result.get(vote,0) + 1
+            result[vote] = result.get(vote, 0) + 1
 
         if len(result) == 1:
             return result.keys()[0]
 
-        tmp = sorted(result.items(),key = lambda x : x[1])
+        tmp = sorted(result.items(), key=lambda x: x[1])
 
         ans = [tmp[0][0]]
         for i in range(len(tmp) - 1):
-            if tmp[i][1] == tmp[i+1][1]:
-                ans.append(tmp[i+1][1])
+            if tmp[i][1] == tmp[i + 1][1]:
+                ans.append(tmp[i + 1][1])
             else:
                 break
 
         return ans
-
-
 
     def start(self):
         self.__turn = 0
@@ -225,13 +227,13 @@ class Werewolf:
             dead = self.__vote_helper([x.take_action for x in selfs],
                                       selfs,
                                       play_ids,
-                                      [ 1 for _ in len(selfs)],
+                                      [1 for _ in len(selfs)],
                                       True)
 
             if dead is None:
                 for wolf in wolves:
                     if wolf[0].is_alive():
-                        notice("please kill One person!",self.__room_id, wolf[1])
+                        notice('please kill One person!', self.__room_id, wolf[1])
             else:
                 break
 
@@ -239,30 +241,30 @@ class Werewolf:
         guard = self.__get_characters(Guard)
         if len(guard) == 1:
             self.__stage = guard[0][0].get_stage()
-            guard[0][0].take_action(self.__context, self.__cv,self.__room_id,guard[0][1])
+            guard[0][0].take_action(self.__context, self.__cv, self.__room_id, guard[0][1])
 
         # prophet round
         prophet = self.__get_characters(Prophet)
         if len(prophet) == 1:
             self.__stage = prophet[0][0].get_stage()
-            ans = prophet[0][0].take_action(self.__context, self.__cv,self.__room_id,prophet[0][1])
+            ans = prophet[0][0].take_action(self.__context, self.__cv, self.__room_id, prophet[0][1])
             if ans is not None:
                 if isinstance(self.__list[ans[0]], Wolf):
-                    notice("He is a bad man!", self.__room_id, prophet[0][1])
+                    notice('He is a bad man!', self.__room_id, prophet[0][1])
                 else:
-                    notice("He is a good man!", self.__room_id, prophet[0][1])
+                    notice('He is a good man!', self.__room_id, prophet[0][1])
 
         # witch round
         witch = self.__get_characters(Witch)
         if len(witch) == 1:
             self.__stage = witch[0][0].get_stage()
             self.__context['to be dead'] = dead
-            ans = witch[0][0].take_action(self.__context,self.__cv,self.__room_id,witch[0][1])
+            ans = witch[0][0].take_action(self.__context, self.__cv, self.__room_id, witch[0][1])
 
-        #final calculate
+        # final calculate
         if (guard[0][0].get_guardee() == dead or ans[0] == 1) and ans[1] == -1:
             pass
-        elif guard[0][0].get_guardee() == dead or ans[0] == 1 :
+        elif guard[0][0].get_guardee() == dead or ans[0] == 1:
             self.__handle_dead([ans[1]])
         elif ans[1] != -1:
             self.__handle_dead([dead, ans[1]])
@@ -275,40 +277,40 @@ class Werewolf:
 
         # vote for cop
         if self.__turn == 1:
-            self.__stage = "cop"
+            self.__stage = 'cop'
             play_ids = []
             selfs = []
             for i in range(len(self.__list)):
-                if self._list[i].is_alive():
+                if self.__list[i].is_alive():
                     play_ids.append(i)
                     selfs.append(self.__list[i])
 
                     while True:
 
-                        ans = self.__vote_helper([x.vote for x in selfs ],
-                                                        selfs,
-                                                        play_ids,
-                                                        [1 for _ in range(len(selfs))],
-                                                        False,
-                                                        self.__stage
+                        ans = self.__vote_helper([x.vote for x in selfs],
+                                                 selfs,
+                                                 play_ids,
+                                                 [1 for _ in range(len(selfs))],
+                                                 False,
+                                                 self.__stage
                                                  )
 
-                        if len(ans) != 1 :
+                        if len(ans) != 1:
                             for play_id in play_ids:
-                                notice("Tie for" + str(ans), " . Please revote",self.__room_id,play_id)
+                                notice('Tie for' + str(ans) + ' . Please revote', self.__room_id, play_id)
                         else:
                             self.__cop = ans[0]
 
                             for play_id in play_ids:
-                                notice("Cop is No." + str(self.__cop),self.__room_id,play_id)
+                                notice('Cop is No.' + str(self.__cop), self.__room_id, play_id)
                             break
 
-        self.__stage = "dead"
+        self.__stage = 'dead'
         play_ids = []
         selfs = []
         weights = []
         for i in range(len(self.__list)):
-            if self._list[i].is_alive():
+            if self.__list[i].is_alive():
                 play_ids.append(i)
                 selfs.append(self.__list[i])
                 if i == self.__cop:
@@ -317,18 +319,17 @@ class Werewolf:
                     weights.append(2)
 
         while True:
-            ans = self.__vote_helper([x.vote for x in selfs ],
-                                            selfs,
-                                            play_ids,
-                                            weights,
-                                            False,
-                                            self.__stage
+            ans = self.__vote_helper([x.vote for x in selfs],
+                                     selfs,
+                                     play_ids,
+                                     weights,
+                                     False,
+                                     self.__stage
                                      )
 
-            if len(ans) != 1 :
+            if len(ans) != 1:
                 for play_id in play_ids:
-                    notice("Tie for" + str(ans), " . Please revote",self.__room_id,play_id)
+                    notice('Tie for' + str(ans) + ' . Please revote', self.__room_id, play_id)
             else:
                 self.__handle_dead(ans)
                 break
-

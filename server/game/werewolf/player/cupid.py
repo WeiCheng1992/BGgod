@@ -1,14 +1,16 @@
-from server.werewolf.character import Character
-from server.controller.roomIO import notice
-import threading
+from server.utils.socket_utils import notice
+from server.game.werewolf.player.character import Character
+
+
+_STAGE = 'SET_COUPLE'
 
 
 class Cupid(Character):
     def __init__(self):
-        super('SET_COUPLE')
+        Character.__init__(self, _STAGE)
 
-    def take_action(self, context, cv, room_id = None, play_id = None):
-        notice("Please choose 2 player to be couples.\n(type 2 numbers splited by space)",room_id, play_id)
+    def take_action(self, context, cv, room_id=None, play_id=None):
+        notice('Please choose 2 player to be couples.\n(type 2 numbers split by space)', room_id, play_id)
 
         ans = []
         stage = self.get_stage() + ':' + str(play_id)
@@ -30,11 +32,9 @@ class Cupid(Character):
                     del context[stage]
                     break
 
-        notice('You are couple. The other is No. '+ str(ans[1]),room_id,ans[0])
-        notice('You are couple. The other is No. '+ str(ans[0]),room_id,ans[1])
+        notice('You are couple. The other is No. ' + str(ans[1]), room_id, ans[0])
+        notice('You are couple. The other is No. ' + str(ans[0]), room_id, ans[1])
 
         cv.release()
 
         return ans
-
-

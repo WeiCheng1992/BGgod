@@ -1,12 +1,14 @@
-from server.controller.roomIO import notice
-import threading
+from server.utils.socket_utils import notice
 
 
 class Character:
     __is_alive = False
     __STAGE = None
 
-    def __init__(self,stage):
+    def __init__(self):
+        self.__is_alive = True
+
+    def __init__(self, stage):
         self.__is_alive = True
         self.__STAGE = stage
 
@@ -16,24 +18,20 @@ class Character:
     def is_alive(self):
         return self.__is_alive
 
-    def dead_action(self, context, cv, room_id = None, play_id = None):
+    def dead_action(self, context, cv, room_id=None, play_id=None):
         return []
 
-    def take_action(self, context, cv, room_id = None, play_id = None):
+    def take_action(self, context, cv, room_id=None, play_id=None):
         return []
-
-    def is_active(self, turn):
-        return False
 
     def get_stage(self):
         return self.__STAGE
 
-    def vote(self,stage, context, cv, room_id = None, play_id = None):
+    def vote(self, stage, context, cv, room_id=None, play_id=None):
 
-        notice("Please vote for "+stage, room_id, play_id)
+        notice('Please vote for ' + stage, room_id, play_id)
 
         ans = None
-
         stage += str(play_id)
 
         cv.acquire()
@@ -48,6 +46,3 @@ class Character:
         cv.release()
 
         return ans
-
-
-

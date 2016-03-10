@@ -1,20 +1,22 @@
-from server.werewolf.character import Character
-from server.controller.roomIO import notice
-import threading
+from server.utils.socket_utils import notice
+from server.game.werewolf.player.character import Character
+
+_STAGE = 'Prophet'
 
 
-class Wolf(Character):
+class Prophet(Character):
     def __init__(self):
-        super('Prophet Detect')
+        Character.__init__(self, _STAGE)
 
-    def take_action(self, context, cv, room_id = None, play_id = None):
+    def take_action(self, context, cv, room_id=None, play_id=None):
         if not self.is_alive():
             return None
 
-        notice("Please choose one person to dectect !",room_id,play_id)
+        notice('Please choose one person to dectect !', room_id, play_id)
 
         stage = self.get_stage() + str(play_id)
 
+        ans = []
         cv.acquire()
         while True:
             if stage not in context:
@@ -27,4 +29,3 @@ class Wolf(Character):
         cv.release()
 
         return ans
-

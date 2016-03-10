@@ -1,11 +1,14 @@
 import sqlite3
-from User import User
-from server import app
+
 from flask import g
+
+from server import app
+from server.model.entity.user import User
 
 
 def connect_to_database():
     return sqlite3.connect("./server/model/BGgod.sqlite")
+
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -13,8 +16,9 @@ def get_db():
         db = g._database = connect_to_database()
     return db
 
+
 @app.teardown_appcontext
-def close_connection(exception):
+def close_connection():
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()

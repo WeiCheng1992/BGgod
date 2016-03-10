@@ -1,15 +1,16 @@
-from server.werewolf.character import Character
-from server.controller.roomIO import notice
-import threading
+from server.utils.socket_utils import notice
+from server.game.werewolf.player.character import Character
+
+_STAGE = 'Guard Round'
 
 
-class Wolf(Character):
+class Guard(Character):
     def __init__(self):
-        super('Guard Round')
+        Character.__init__(self, _STAGE)
         self.__guard = None
 
-    def take_action(self, context, cv, room_id = None, play_id = None):
-        notice("Please choose the person you want to guard!",room_id,play_id)
+    def take_action(self, context, cv, room_id=None, play_id=None):
+        notice('Please choose the person you want to guard!', room_id, play_id)
 
         stage = self.get_stage() + str(play_id)
 
@@ -19,7 +20,7 @@ class Wolf(Character):
                 cv.wait()
             else:
                 if self.__guard == context[stage][0]:
-                    notice("You can't guard one person in consecutive 2 rounds",room_id,play_id)
+                    notice("You can't guard one person in consecutive 2 rounds", room_id, play_id)
                     del context[stage]
                     cv.wait()
                 else:
@@ -33,4 +34,3 @@ class Wolf(Character):
 
     def get_guardee(self):
         return self.__guard
-

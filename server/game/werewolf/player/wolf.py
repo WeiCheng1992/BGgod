@@ -1,17 +1,18 @@
-from server.werewolf.character import Character
-from server.controller.roomIO import notice
-import threading
+from server.utils.socket_utils import notice
+from server.game.werewolf.player.character import Character
+
+_STAGE = 'WOLF_KILL'
 
 
 class Wolf(Character):
     def __init__(self):
-        super('WOLF_KILL')
+        Character.__init__(self, _STAGE)
 
-    def take_action(self, context, cv, room_id = None, play_id = None):
+    def take_action(self, context, cv, room_id=None, play_id=None):
         if not self.is_alive():
             return None
 
-        notice("Please kill one person discussing with your teammate!",room_id,play_id)
+        notice('Please kill one person discussing with your teammate!', room_id, play_id)
 
         ans = []
 
@@ -29,4 +30,3 @@ class Wolf(Character):
         cv.release()
 
         return ans
-

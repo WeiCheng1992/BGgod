@@ -2,4 +2,5 @@ from server.game.werewolf.player.character import Character
 
 
 class Villager(Character):
-    pass
+    def __init__(self):
+        Character.__init__(self)

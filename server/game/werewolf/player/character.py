@@ -5,10 +5,7 @@ class Character:
     __is_alive = False
     __STAGE = None
 
-    def __init__(self):
-        self.__is_alive = True
-
-    def __init__(self, stage):
+    def __init__(self, stage=None):
         self.__is_alive = True
         self.__STAGE = stage
 

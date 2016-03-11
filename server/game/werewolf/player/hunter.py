@@ -7,7 +7,6 @@ _STAGE = 'Hunter Round'
 class Hunter(Character):
     def __init__(self):
         Character.__init__(self, _STAGE)
-        super(_STAGE)
 
     def dead_action(self, context, cv, room_id=None, play_id=None):
         notice('Please choose one person to die (-1 for no one)!', room_id, play_id)

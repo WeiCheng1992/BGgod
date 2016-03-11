@@ -9,7 +9,7 @@ socketio = SocketIO(app)
 
 MAX_PEOPLE = 15
 
-from server import controller
+from server.controller import login, room, roomio
 
 
 

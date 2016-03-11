@@ -1,7 +1,7 @@
 import random
 
-from server.utils.socket_utils import alert, broadcast
 from server.game.werewolf.wereworf_game import Werewolf
+from server.utils.socket_utils import alert, broadcast
 
 _ROOMS = dict()
 _USERS = dict()
@@ -62,6 +62,7 @@ def game_begin(room_id):
 
     global _ROOMS, _USERS
 
+    print "aaaaa"
     if _ROOMS[room_id].get_usernum() != _ROOMS[room_id].get_peoplenum():
         alert('someone doesn\'t enter', room_id, 0)
         return

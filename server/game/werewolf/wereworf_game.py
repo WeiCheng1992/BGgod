@@ -1,6 +1,8 @@
 import threading
 from random import shuffle
 
+from flask import copy_current_request_context
+
 from server.utils.socket_utils import notice, broadcast, deadnote
 from server.game.werewolf.player.cupid import Cupid
 from server.game.werewolf.player.guard import Guard
@@ -45,7 +47,7 @@ class Werewolf:
         self.__room_id = room_id
 
     def get_role(self, index):
-        return type(self.__list[index])
+        return str(self.__list[index].__class__).split('.')[-1]
 
     def get_peoplenum(self):
         return len(self.__list)
@@ -150,16 +152,17 @@ class Werewolf:
 
         return ans
 
-    def __vote_wrapper(self, func, sself, play_id, ans, stage=None):
-
-        if stage is None:
-            ans[play_id] = func(sself, self.__context, self.__cv, self.__room_id, play_id)[0]
-        else:
-            ans[play_id] = func(sself, stage, self.__context, self.__cv, self.__room_id, play_id)
-
     def __vote_helper(self, funcs, selfs, play_ids, weights, isone, stage=None):
         ans = dict()
         threads = []
+
+        @copy_current_request_context
+        def __vote_wrapper(self, func, sself, play_id, ans, stage=None):
+
+            if stage is None:
+                ans[play_id] = func(sself, self.__context, self.__cv, self.__room_id, play_id)[0]
+            else:
+                ans[play_id] = func(sself, stage, self.__context, self.__cv, self.__room_id, play_id)
 
         for i in range(len(funcs)):
             threads.append(

@@ -72,4 +72,3 @@ def logout():
         session.pop("password")
     flash('logout successfully')
     return redirect(url_for('login'))
-

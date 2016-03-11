@@ -2,6 +2,7 @@ import threading
 
 from flask import session, redirect, url_for
 from flask_socketio import join_room
+from flask import copy_current_request_context
 
 from server import socketio
 from server.game.werewolf.werewolf_manager import game_begin, start_night
@@ -23,11 +24,21 @@ def join_chatroom():
 
 @socketio.on('begin')
 def begin(room_id):
-    t = threading.Thread(target=game_begin, args=(int(room_id), ))
+
+    @copy_current_request_context
+    def begin_wrapper(room_id):
+        game_begin(room_id)
+
+    t = threading.Thread(target=begin_wrapper, args=(int(room_id),))
     t.start()
 
 
 @socketio.on('night')
 def night(room_id):
-    t = threading.Thread(target=start_night, args=(int(room_id), ))
+
+    @copy_current_request_context
+    def night_wrapper(room_id):
+        start_night(room_id)
+
+    t = threading.Thread(target=night_wrapper, args=(int(room_id), ))
     t.start()

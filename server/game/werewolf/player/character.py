@@ -29,7 +29,7 @@ class Character:
         notice('Please vote for ' + stage, room_id, play_id)
 
         ans = None
-        stage += str(play_id)
+        stage += ":" + str(play_id)
 
         cv.acquire()
         while True:

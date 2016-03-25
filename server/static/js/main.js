@@ -6,17 +6,17 @@ $(document).ready(function(){
     var socket = io.connect("http://" + document.domain + ':' + location.port);
     socket.emit("join_user");
 
-    socket.on("connect", function() {
 
+    socket.on("broadcast", function(msg) {
+        document.getElementById("dial").innerHTML +=  msg['msg'] + "\n";
     });
 
-    socket.on("greeting", function(msg) {
-        document.getElementById("dial").innerHTML +=  "Welcome " + msg['username'] +
-        "  id: " + msg['play_id'] +  "\n";
+    socket.on("notice", function(msg) {
+        document.getElementById("dial").innerHTML +=  "You are killed!\n";
     });
 
-    socket.on("message", function(msg) {
-        document.getElementById("dial").innerHTML +=  msg + "\n";
+    socket.on("deadnote", function(msg) {
+        document.getElementById("dial").innerHTML +=  msg['msg'] + "\n";
     });
 
 
@@ -31,7 +31,7 @@ $(document).ready(function(){
 
         if(input != ""){
             document.getElementById("dial").innerHTML +=  input + "\n";
-            socket.send(input);
+            socket.emit("msg",{'room_id': room_id , 'play_id': play_id,'msg' : input })
         }
         return false;
     });
@@ -39,6 +39,11 @@ $(document).ready(function(){
 
     $("form#begin").submit(function(event) {
         socket.emit("begin",room_id);
+        return false;
+    });
+
+    $("form#night").submit(function(event) {
+        socket.emit("night",room_id);
         return false;
     });
 });

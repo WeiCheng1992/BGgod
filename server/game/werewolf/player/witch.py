@@ -19,7 +19,7 @@ class Witch(Character):
         dead = context['to be dead']
 
         notice('No. ' + str(dead) + ' dead tonight.', room_id, play_id)
-        stage = self.get_stage() + str(play_id)
+        stage = self.get_stage() + ":" + str(play_id)
 
         cv.acquire()
         del context['to be dead']

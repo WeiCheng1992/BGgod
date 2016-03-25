@@ -12,7 +12,7 @@ class Guard(Character):
     def take_action(self, context, cv, room_id=None, play_id=None):
         notice('Please choose the person you want to guard!', room_id, play_id)
 
-        stage = self.get_stage() + str(play_id)
+        stage = self.get_stage() + ":" + str(play_id)
 
         cv.acquire()
         while True:

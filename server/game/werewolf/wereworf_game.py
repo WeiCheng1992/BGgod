@@ -70,12 +70,13 @@ class Werewolf:
             return
 
         info = info.split()
-        self.__cv.require()
+        self.__cv.acquire()
 
-        if self.__stage not in self.__context:
-            self.__context[self.__stage + str(play_id)] = []
+        stage = self.__stage + ':' + str(play_id)
+        if stage not in self.__context:
+            self.__context[stage] = []
 
-        self.__context[self.__stage + str(play_id)] += info
+        self.__context[stage] += info
 
         self.__cv.notify_all()
 
@@ -90,6 +91,8 @@ class Werewolf:
         return ans
 
     def __handle_dead(self, deads):
+        deads = list(map(int, deads))
+
         for dead in deads:
             if self.__couple is not None and dead in self.__couple:
                 deads += self.__couple
@@ -152,21 +155,21 @@ class Werewolf:
 
         return ans
 
-    def __vote_helper(self, funcs, selfs, play_ids, weights, isone, stage=None):
+    def __vote_helper(self, funcs, play_ids, weights, isone, stage=None):
         ans = dict()
         threads = []
 
         @copy_current_request_context
-        def __vote_wrapper(self, func, sself, play_id, ans, stage=None):
+        def __vote_wrapper(context, cv, func, play_id, ans, stage=None):
 
             if stage is None:
-                ans[play_id] = func(sself, self.__context, self.__cv, self.__room_id, play_id)[0]
+                ans[play_id] = func(context, cv, self.__room_id, play_id)[0]
             else:
-                ans[play_id] = func(sself, stage, self.__context, self.__cv, self.__room_id, play_id)
+                ans[play_id] = func(stage, context, cv, self.__room_id, play_id)
 
         for i in range(len(funcs)):
             threads.append(
-                threading.Thread(target=self.__vote_wrapper, args=(self, funcs[i], selfs[i], play_ids[i], ans, stage)))
+                threading.Thread(target=__vote_wrapper, args=(self.__context, self.__cv, funcs[i], play_ids[i], ans, stage)))
 
             threads[-1].start()
 
@@ -228,9 +231,8 @@ class Werewolf:
 
         while True:
             dead = self.__vote_helper([x.take_action for x in selfs],
-                                      selfs,
                                       play_ids,
-                                      [1 for _ in len(selfs)],
+                                      [1 for _ in range(len(selfs))],
                                       True)
 
             if dead is None:
@@ -239,6 +241,9 @@ class Werewolf:
                         notice('please kill One person!', self.__room_id, wolf[1])
             else:
                 break
+
+
+        print "kill done"
 
         # guard round
         guard = self.__get_characters(Guard)
@@ -263,11 +268,16 @@ class Werewolf:
             self.__stage = witch[0][0].get_stage()
             self.__context['to be dead'] = dead
             ans = witch[0][0].take_action(self.__context, self.__cv, self.__room_id, witch[0][1])
+        else:
+            ans = [-1, -1]
 
-        # final calculate
-        if (guard[0][0].get_guardee() == dead or ans[0] == 1) and ans[1] == -1:
+        print "final"
+        #  final calculate
+        g = guard[0][0].get_guardee() if len(guard) == 1 else -1
+
+        if (g == dead or ans[0] == 1) and ans[1] == -1:
             pass
-        elif guard[0][0].get_guardee() == dead or ans[0] == 1:
+        elif g == dead or ans[0] == 1:
             self.__handle_dead([ans[1]])
         elif ans[1] != -1:
             self.__handle_dead([dead, ans[1]])
@@ -291,7 +301,6 @@ class Werewolf:
                     while True:
 
                         ans = self.__vote_helper([x.vote for x in selfs],
-                                                 selfs,
                                                  play_ids,
                                                  [1 for _ in range(len(selfs))],
                                                  False,
@@ -322,9 +331,8 @@ class Werewolf:
                     weights.append(2)
 
         while True:
-            ans = self.__vote_helper([x.vote for x in selfs],
-                                     selfs,
-                                     play_ids,
+            ans = self.__vote_helper(play_ids,
+                                     [x.vote for x in selfs],
                                      weights,
                                      False,
                                      self.__stage

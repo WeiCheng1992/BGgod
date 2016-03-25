@@ -62,7 +62,6 @@ def game_begin(room_id):
 
     global _ROOMS, _USERS
 
-    print "aaaaa"
     if _ROOMS[room_id].get_usernum() != _ROOMS[room_id].get_peoplenum():
         alert('someone doesn\'t enter', room_id, 0)
         return
@@ -80,4 +79,10 @@ def start_night(room_id):
 
     global _ROOMS
 
-    _ROOMS[room_id].night()
+    _ROOMS[room_id].next_night()
+
+
+def set_info(room_id, play_id, msg):
+    global _ROOMS
+
+    _ROOMS[room_id].set_info(msg, play_id)

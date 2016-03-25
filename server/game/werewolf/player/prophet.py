@@ -14,7 +14,7 @@ class Prophet(Character):
 
         notice('Please choose one person to dectect !', room_id, play_id)
 
-        stage = self.get_stage() + str(play_id)
+        stage = self.get_stage() + ":" + str(play_id)
 
         ans = []
         cv.acquire()

@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../static/js/main.js"></script>
     <script type="text/javascript" charset="utf-8">
         var room_id = {{room_id}}
+        var play_id = {{play_id}}
     </script>
 
 {% endblock %}
@@ -29,6 +30,9 @@
 {% if play_id == 0 %}
 <form id="begin" action="#">
     <input type=submit value='Start Game'><br />
+</form>
+<form id="night" action="#">
+    <input type=submit value='Next Night'><br />
 </form>
 {%endif%}
 {%endblock%}

@@ -16,12 +16,13 @@ class Wolf(Character):
 
         ans = []
 
-        stage = self.get_stage() + str(play_id)
+        stage = self.get_stage() + ":" + str(play_id)
 
         cv.acquire()
         while True:
             if stage not in context:
                 cv.wait()
+                print context
             else:
                 ans = context[stage][0:1]
                 del context[stage]

@@ -11,7 +11,7 @@ class Hunter(Character):
     def dead_action(self, context, cv, room_id=None, play_id=None):
         notice('Please choose one person to die (-1 for no one)!', room_id, play_id)
 
-        stage = self.get_stage() + str(play_id)
+        stage = self.get_stage() + ":" + str(play_id)
 
         ans = []
         cv.acquire()

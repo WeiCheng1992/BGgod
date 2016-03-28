@@ -3,7 +3,7 @@ from random import shuffle
 
 from flask import copy_current_request_context
 
-from server.utils.socket_utils import notice, broadcast, deadnote
+from server.utils.socket_utils import notice, broadcast, deadnote, alert
 from server.game.werewolf.player.cupid import Cupid
 from server.game.werewolf.player.guard import Guard
 from server.game.werewolf.player.hunter import Hunter
@@ -69,7 +69,12 @@ class Werewolf:
         if self.__stage is None:
             return
 
-        info = info.split()
+        try:
+            info = list(map(int, info.split()))
+        except ValueError:
+            alert("input is invalid!", self.__room_id, play_id)
+            return
+
         self.__cv.acquire()
 
         stage = self.__stage + ':' + str(play_id)
@@ -125,8 +130,8 @@ class Werewolf:
             notice('No.' + str(dead) + ' dead.', self.__room_id)
             self.__list[dead].dead()
 
-        win = self.__is_win()
-        if win is None:
+        iswin, win = self.__is_win()
+        if iswin:
             broadcast('Game ends. ' + str(win) + ' win!', self.__room_id)
         else:
             if self.__cop in deads:
@@ -142,18 +147,22 @@ class Werewolf:
             if self.__list[i].is_alive():
                 ans.append(i)
 
-        if len(self.__get_characters(Wolf)) == 0:
-            return ans
+        # good man win
+        if len(filter(lambda x: x.is_alive(), list(map(lambda x: x[0], self.__get_characters(Wolf))))) == 0:
+            return True, ans
 
+        # couple win
         if len(ans) == 2 and self.__couple is not None:
             if ans[0] * ans[1] == self.__couple[0] * self.__couple[1] and sum(ans) == sum(self.__couple):
-                return ans
+                return True, ans
 
+        # not win
         for alive in filter(lambda x: x.is_alive(), self.__list):
             if not isinstance(alive, Wolf):
-                return None
+                return False, None
 
-        return ans
+        # wolf win
+        return True, ans
 
     def __vote_helper(self, funcs, play_ids, weights, isone, stage=None):
         ans = dict()
@@ -169,7 +178,8 @@ class Werewolf:
 
         for i in range(len(funcs)):
             threads.append(
-                threading.Thread(target=__vote_wrapper, args=(self.__context, self.__cv, funcs[i], play_ids[i], ans, stage)))
+                threading.Thread(target=__vote_wrapper,
+                                 args=(self.__context, self.__cv, funcs[i], play_ids[i], ans, stage)))
 
             threads[-1].start()
 
@@ -189,14 +199,14 @@ class Werewolf:
             result[vote] = result.get(vote, 0) + 1
 
         if len(result) == 1:
-            return result.keys()[0]
+            return [result.keys()[0]]
 
-        tmp = sorted(result.items(), key=lambda x: x[1])
+        tmp = sorted(result.items(), key=lambda x: x[1], reverse=True)
 
-        ans = [tmp[0][0]]
+        ans = [int(tmp[0][0])]
         for i in range(len(tmp) - 1):
             if tmp[i][1] == tmp[i + 1][1]:
-                ans.append(tmp[i + 1][1])
+                ans.append(int(tmp[i + 1][0]))
             else:
                 break
 
@@ -211,7 +221,7 @@ class Werewolf:
 
         else:
             self.__stage = cupid[0][0].get_stage()
-            self.__couple = cupid[0][0].take_action(self.__context, self.__cv, self.__room_id, cupid[0][1])
+            self.__couple = list(map(int, cupid[0][0].take_action(self.__context, self.__cv, self.__room_id, cupid[0][1])))
             self.__stage = None
 
     def next_night(self):
@@ -229,21 +239,17 @@ class Werewolf:
                 play_ids.append(wolf[1])
                 selfs.append(wolf[0])
 
-        while True:
-            dead = self.__vote_helper([x.take_action for x in selfs],
-                                      play_ids,
-                                      [1 for _ in range(len(selfs))],
-                                      True)
+        dead = self.__vote_helper([x.take_action for x in selfs],
+                                  play_ids,
+                                  [1 for _ in range(len(selfs))],
+                                  True)
 
-            if dead is None:
-                for wolf in wolves:
-                    if wolf[0].is_alive():
-                        notice('please kill One person!', self.__room_id, wolf[1])
-            else:
-                break
-
-
-        print "kill done"
+        if dead is None:
+            for wolf in wolves:
+                if wolf[0].is_alive():
+                    notice('No one dead tonight', self.__room_id, wolf[1])
+        else:
+            dead = dead[0]
 
         # guard round
         guard = self.__get_characters(Guard)
@@ -276,7 +282,7 @@ class Werewolf:
         g = guard[0][0].get_guardee() if len(guard) == 1 else -1
 
         if (g == dead or ans[0] == 1) and ans[1] == -1:
-            pass
+            broadcast("No one die tonight!", self.__room_id)
         elif g == dead or ans[0] == 1:
             self.__handle_dead([ans[1]])
         elif ans[1] != -1:
@@ -288,6 +294,7 @@ class Werewolf:
 
     def next_day(self):
 
+        self.__turn += 1
         # vote for cop
         if self.__turn == 1:
             self.__stage = 'cop'
@@ -298,24 +305,24 @@ class Werewolf:
                     play_ids.append(i)
                     selfs.append(self.__list[i])
 
-                    while True:
+            while True:
 
-                        ans = self.__vote_helper([x.vote for x in selfs],
-                                                 play_ids,
-                                                 [1 for _ in range(len(selfs))],
-                                                 False,
-                                                 self.__stage
-                                                 )
+                ans = self.__vote_helper([x.vote for x in selfs],
+                                         play_ids,
+                                         [1 for _ in range(len(selfs))],
+                                         False,
+                                         self.__stage
+                                         )
 
-                        if len(ans) != 1:
-                            for play_id in play_ids:
-                                notice('Tie for' + str(ans) + ' . Please revote', self.__room_id, play_id)
-                        else:
-                            self.__cop = ans[0]
+                if len(ans) != 1:
+                    for play_id in play_ids:
+                        notice('Tie for' + str(ans) + ' . Please revote', self.__room_id, play_id)
+                else:
+                    self.__cop = ans[0]
 
-                            for play_id in play_ids:
-                                notice('Cop is No.' + str(self.__cop), self.__room_id, play_id)
-                            break
+                    for play_id in play_ids:
+                        notice('Cop is No.' + str(self.__cop), self.__room_id, play_id)
+                    break
 
         self.__stage = 'dead'
         play_ids = []
@@ -331,8 +338,8 @@ class Werewolf:
                     weights.append(2)
 
         while True:
-            ans = self.__vote_helper(play_ids,
-                                     [x.vote for x in selfs],
+            ans = self.__vote_helper([x.vote for x in selfs],
+                                     play_ids,
                                      weights,
                                      False,
                                      self.__stage

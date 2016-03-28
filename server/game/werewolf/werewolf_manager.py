@@ -82,6 +82,13 @@ def start_night(room_id):
     _ROOMS[room_id].next_night()
 
 
+def start_day(room_id):
+
+    global _ROOMS
+
+    _ROOMS[room_id].next_day()
+
+
 def set_info(room_id, play_id, msg):
     global _ROOMS
 

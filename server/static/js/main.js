@@ -12,11 +12,11 @@ $(document).ready(function(){
     });
 
     socket.on("notice", function(msg) {
-        document.getElementById("dial").innerHTML +=  "You are killed!\n";
+        document.getElementById("dial").innerHTML +=  msg['msg'] + "\n";
     });
 
     socket.on("deadnote", function(msg) {
-        document.getElementById("dial").innerHTML +=  msg['msg'] + "\n";
+        document.getElementById("dial").innerHTML +=  "You are killed!\n";
     });
 
 
@@ -44,6 +44,11 @@ $(document).ready(function(){
 
     $("form#night").submit(function(event) {
         socket.emit("night",room_id);
+        return false;
+    });
+
+    $("form#day").submit(function(event) {
+        socket.emit("day",room_id);
         return false;
     });
 });

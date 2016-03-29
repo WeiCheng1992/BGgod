@@ -17,8 +17,8 @@ def notice(msg, room_id, play_id=None):
     emit('notice', {'msg': msg}, room=get_channel(room_id, play_id))
 
 
-def deadnote(msg, room_id, play_id=None):
-    emit('deadnote', {'msg': msg}, room=get_channel(room_id, play_id))
+def deadnote(id, room_id, play_id=None):
+    emit('deadnote', {'id': id}, room=get_channel(room_id, play_id))
 
 
 def end(room_id):

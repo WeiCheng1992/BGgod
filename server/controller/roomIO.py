@@ -23,15 +23,12 @@ def join_chatroom():
 
 
 @socketio.on('leave_user')
-def leave_chatroom():
-    if 'uid' not in session:
-        return redirect(url_for('login'))
+def leave_chatroom(room_id, player_id):
 
-    userinfo = get_userinfo(session['uid'])
     # big room
-    leave_room(get_channel(userinfo['room_id'], None))
+    leave_room(get_channel(room_id, None))
     # personal room
-    leave_room(get_channel(userinfo['room_id'], userinfo['play_id']))
+    leave_room(get_channel(room_id, player_id))
 
 
 @socketio.on('msg')

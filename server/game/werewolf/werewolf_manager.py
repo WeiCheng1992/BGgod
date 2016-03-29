@@ -1,7 +1,7 @@
 import random
 
 from server.game.werewolf.wereworf_game import Werewolf
-from server.utils.socket_utils import alert, notice
+from server.utils.socket_utils import alert, notice, end
 
 _ROOMS = dict()
 _USERS = dict()
@@ -93,3 +93,13 @@ def set_info(room_id, play_id, msg):
     global _ROOMS
 
     _ROOMS[room_id].set_info(msg, play_id)
+
+
+def game_end(room_id):
+    global _ROOMS, _USERS
+    if room_id in _ROOMS:
+        for i in range(_ROOMS[room_id].get_peoplenum()):
+            uid = _ROOMS[room_id].get_user(i)
+            del _USERS[uid]
+        del _ROOMS[room_id]
+        end(room_id)

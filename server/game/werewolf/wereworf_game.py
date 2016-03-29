@@ -13,6 +13,7 @@ from server.game.werewolf.player.witch import Witch
 from server.game.werewolf.player.wolf import Wolf
 
 
+
 class Werewolf:
     __list = []
     __cop = None
@@ -105,13 +106,14 @@ class Werewolf:
         deads = list(set(deads))
 
         for dead in deads:
-            deadnote(str(dead), self.__room_id, dead)
-            notice('No.' + str(dead) + ' dead.', self.__room_id)
+            deadnote(dead, self.__room_id, dead)
             self.__list[dead].dead()
 
         iswin, win = self.__is_win()
         if iswin:
             notice('Game ends. ' + str(win) + ' win!', self.__room_id)
+            from server.game.werewolf.werewolf_manager import game_end
+            game_end(self.__room_id)### game end
             return
 
         n = []
@@ -129,10 +131,7 @@ class Werewolf:
             self.__couple = None
 
         for dead in n:
-            deadnote(str(dead), self.__room_id, dead)
-
-        for dead in n:
-            notice('No.' + str(dead) + ' dead.', self.__room_id)
+            deadnote(dead, self.__room_id, dead)
             self.__list[dead].dead()
 
         deads += n
@@ -140,6 +139,8 @@ class Werewolf:
         iswin, win = self.__is_win()
         if iswin:
             notice('Game ends. ' + str(win) + ' win!', self.__room_id)
+            from server.game.werewolf.werewolf_manager import game_end
+            game_end(self.__room_id)### game end
         else:
             if self.__cop in deads:
                 notice('cop dead. Must set a new cop', self.__room_id)

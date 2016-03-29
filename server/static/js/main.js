@@ -11,7 +11,12 @@ $(document).ready(function(){
     });
 
     socket.on("deadnote", function(msg) {
-        document.getElementById("dial").innerHTML +=  "You are killed!\n";
+        var dead = msg['id']
+        if (dead == play_id){
+            document.getElementById("dial").innerHTML +=  "You are killed!\n";
+        }else{
+            document.getElementById("dial").innerHTML +=  "No." + dead + "is killed!\n!";
+        }
     });
 
 
@@ -19,8 +24,14 @@ $(document).ready(function(){
         alert(msg['msg']);
     });
 
-    socket.on("end",function(msg){
 
+
+    socket.on("end",function(msg){
+        socket.emit("leave_user",room_id, play_id);
+        setTimeout(function(){
+            window.location.assign("http://" + document.domain + ':' + location.port + "/index")
+        },
+        3000);
     });
 
     $("form#input").submit(function(event) {

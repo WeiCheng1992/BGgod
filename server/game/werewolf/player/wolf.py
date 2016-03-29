@@ -9,10 +9,8 @@ class Wolf(Character):
         Character.__init__(self, _STAGE)
 
     def take_action(self, context, cv, room_id=None, play_id=None):
-        if not self.is_alive():
-            return None
 
-        notice('Please kill one person discussing with your teammate!', room_id, play_id)
+        notice('Please kill one person discussing with your teammate!(-1 for don\'t kill anyone)', room_id, play_id)
 
         ans = []
 
@@ -22,7 +20,6 @@ class Wolf(Character):
         while True:
             if stage not in context:
                 cv.wait()
-                print context
             else:
                 ans = context[stage][0:1]
                 del context[stage]

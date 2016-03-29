@@ -9,8 +9,6 @@ class Prophet(Character):
         Character.__init__(self, _STAGE)
 
     def take_action(self, context, cv, room_id=None, play_id=None):
-        if not self.is_alive():
-            return None
 
         notice('Please choose one person to dectect !', room_id, play_id)
 
@@ -29,3 +27,6 @@ class Prophet(Character):
         cv.release()
 
         return ans
+
+    def fate_action(self, room_id):
+        pass

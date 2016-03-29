@@ -21,6 +21,9 @@ class Character:
     def take_action(self, context, cv, room_id=None, play_id=None):
         return []
 
+    def fate_action(self, room_id):
+        pass
+
     def get_stage(self):
         return self.__STAGE
 

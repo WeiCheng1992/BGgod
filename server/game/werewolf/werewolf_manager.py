@@ -1,7 +1,7 @@
 import random
 
 from server.game.werewolf.wereworf_game import Werewolf
-from server.utils.socket_utils import alert, broadcast
+from server.utils.socket_utils import alert, notice
 
 _ROOMS = dict()
 _USERS = dict()
@@ -66,11 +66,11 @@ def game_begin(room_id):
         alert('someone doesn\'t enter', room_id, 0)
         return
 
-    broadcast('game start!\n', room_id)
+    notice('game start!\n', room_id)
 
     for i in range((_ROOMS[room_id].get_usernum())):
         user = _USERS[_ROOMS[room_id].get_user(i)]
-        broadcast("username: " + user['username'] + " id: " + str(i), room_id)
+        notice("username: " + user['username'] + " id: " + str(i), room_id)
 
     _ROOMS[room_id].start()
 

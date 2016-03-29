@@ -3,7 +3,7 @@ from random import shuffle
 
 from flask import copy_current_request_context
 
-from server.utils.socket_utils import notice, broadcast, deadnote, alert
+from server.utils.socket_utils import notice, deadnote, alert
 from server.game.werewolf.player.cupid import Cupid
 from server.game.werewolf.player.guard import Guard
 from server.game.werewolf.player.hunter import Hunter
@@ -16,16 +16,11 @@ from server.game.werewolf.player.wolf import Wolf
 class Werewolf:
     __list = []
     __cop = None
-    __couple = []
+    __couple = None
     __userlist = []
     __turn = 0
     __stage = None
     __Day_or_night = None
-    __has_cupid = False
-    __has_prophet = False
-    __has_guard = False
-    __has_hunter = False
-    __has_witch = False
     __cv = None
     __context = dict()
     __room_id = 0
@@ -88,6 +83,10 @@ class Werewolf:
         self.__cv.release()
 
     def __get_characters(self, role):
+        """
+        :param role: type of characters EG: Prophet
+        :return: the list of tuple (character, play_id)
+        """
         ans = []
         for i in range(len(self.__list)):
             if isinstance(self.__list[i], role):
@@ -107,6 +106,13 @@ class Werewolf:
 
         for dead in deads:
             deadnote(str(dead), self.__room_id, dead)
+            notice('No.' + str(dead) + ' dead.', self.__room_id)
+            self.__list[dead].dead()
+
+        iswin, win = self.__is_win()
+        if iswin:
+            notice('Game ends. ' + str(win) + ' win!', self.__room_id)
+            return
 
         n = []
         for dead in deads:
@@ -125,23 +131,32 @@ class Werewolf:
         for dead in n:
             deadnote(str(dead), self.__room_id, dead)
 
-        deads += n
-        for dead in deads:
+        for dead in n:
             notice('No.' + str(dead) + ' dead.', self.__room_id)
             self.__list[dead].dead()
 
+        deads += n
+
         iswin, win = self.__is_win()
         if iswin:
-            broadcast('Game ends. ' + str(win) + ' win!', self.__room_id)
+            notice('Game ends. ' + str(win) + ' win!', self.__room_id)
         else:
             if self.__cop in deads:
-                broadcast('cop dead. Must set a new cop', self.__room_id)
+                notice('cop dead. Must set a new cop', self.__room_id)
                 self.__stage = 'setting cop'
                 self.__cop = self.__list[self.__cop].vote(self.__stage, self.__context, self.__cv, self.__room_id,
                                                           self.__cop)
-                broadcast('new cop is No.' + str(self.__cop), self.__room_id)
+                notice('new cop is No.' + str(self.__cop), self.__room_id)
 
     def __is_win(self):
+        """
+        :return: a tuple (iswin,winlist)
+             iswin : boolean
+                    False for game not end
+                    True for game end
+             winlist : list of winning players
+                    None when iswin is False
+        """
         ans = []
         for i in range(len(self.__list)):
             if self.__list[i].is_alive():
@@ -165,6 +180,14 @@ class Werewolf:
         return True, ans
 
     def __vote_helper(self, funcs, play_ids, weights, isone, stage=None):
+        """
+        :param funcs: a list players' vote functions
+        :param play_ids: a list of players' id
+        :param weights: a list of the voting weight of each player
+        :param isone: boolean whether all the people need to have same vote
+        :param stage: string. which voting stage
+        :return: list of targeting people. empty list for vote failure.
+        """
         ans = dict()
         threads = []
 
@@ -187,7 +210,7 @@ class Werewolf:
             thread.join()
 
         if isone and len(set(ans.values())) != 1:
-            return None
+            return []
 
         votes = []
         for i in range(len(funcs)):
@@ -221,68 +244,77 @@ class Werewolf:
 
         else:
             self.__stage = cupid[0][0].get_stage()
-            self.__couple = list(map(int, cupid[0][0].take_action(self.__context, self.__cv, self.__room_id, cupid[0][1])))
+            self.__couple = list(
+                map(int, cupid[0][0].take_action(self.__context, self.__cv, self.__room_id, cupid[0][1])))
             self.__stage = None
 
     def next_night(self):
 
         # wolf killing
         wolves = self.__get_characters(Wolf)
-        dead = None
-        ans = []
         self.__stage = wolves[0][0].get_stage()
         play_ids = []
         selfs = []
+        dead = None
 
         for wolf in wolves:
             if wolf[0].is_alive():
                 play_ids.append(wolf[1])
                 selfs.append(wolf[0])
 
-        dead = self.__vote_helper([x.take_action for x in selfs],
+        deads = self.__vote_helper([x.take_action for x in selfs],
                                   play_ids,
                                   [1 for _ in range(len(selfs))],
                                   True)
 
-        if dead is None:
+        if len(deads) == 0 or deads[0] == -1:
             for wolf in wolves:
                 if wolf[0].is_alive():
                     notice('No one dead tonight', self.__room_id, wolf[1])
         else:
-            dead = dead[0]
+            dead = deads[0]
 
         # guard round
         guard = self.__get_characters(Guard)
         if len(guard) == 1:
-            self.__stage = guard[0][0].get_stage()
-            guard[0][0].take_action(self.__context, self.__cv, self.__room_id, guard[0][1])
+            if guard[0][0].is_alive():
+                self.__stage = guard[0][0].get_stage()
+                guard[0][0].take_action(self.__context, self.__cv, self.__room_id, guard[0][1])
+            else:
+                guard[0][0].fate_action(self.__room_id)
 
         # prophet round
         prophet = self.__get_characters(Prophet)
         if len(prophet) == 1:
-            self.__stage = prophet[0][0].get_stage()
-            ans = prophet[0][0].take_action(self.__context, self.__cv, self.__room_id, prophet[0][1])
-            if ans is not None:
-                if isinstance(self.__list[ans[0]], Wolf):
-                    notice('He is a bad man!', self.__room_id, prophet[0][1])
-                else:
-                    notice('He is a good man!', self.__room_id, prophet[0][1])
+            if prophet[0][0].is_alive():
+                self.__stage = prophet[0][0].get_stage()
+                ans = prophet[0][0].take_action(self.__context, self.__cv, self.__room_id, prophet[0][1])
+                if ans is not None:
+                    if isinstance(self.__list[ans[0]], Wolf):
+                        notice('He is a bad man!', self.__room_id, prophet[0][1])
+                    else:
+                        notice('He is a good man!', self.__room_id, prophet[0][1])
+            else:
+                prophet[0][0].fate_action(self.__room_id)
 
         # witch round
         witch = self.__get_characters(Witch)
         if len(witch) == 1:
-            self.__stage = witch[0][0].get_stage()
-            self.__context['to be dead'] = dead
-            ans = witch[0][0].take_action(self.__context, self.__cv, self.__room_id, witch[0][1])
+            if witch[0][0].is_alive():
+                self.__stage = witch[0][0].get_stage()
+                self.__context['to be dead'] = dead
+                ans = witch[0][0].take_action(self.__context, self.__cv, self.__room_id, witch[0][1])
+            else:
+                witch[0][0].fate_action(self.__room_id)
+                ans = [0, -1]
         else:
-            ans = [-1, -1]
+            ans = [0, -1]
 
-        print "final"
         #  final calculate
         g = guard[0][0].get_guardee() if len(guard) == 1 else -1
 
-        if (g == dead or ans[0] == 1) and ans[1] == -1:
-            broadcast("No one die tonight!", self.__room_id)
+        if (dead is None or g == dead or ans[0] == 1) and ans[1] == -1:
+            notice("No one die tonight!", self.__room_id)
         elif g == dead or ans[0] == 1:
             self.__handle_dead([ans[1]])
         elif ans[1] != -1:

@@ -1,7 +1,7 @@
 import threading
 
 from flask import session, redirect, url_for
-from flask_socketio import join_room
+from flask_socketio import join_room, leave_room
 from flask import copy_current_request_context
 
 from server import socketio
@@ -20,6 +20,18 @@ def join_chatroom():
     join_room(get_channel(userinfo['room_id'], None))
     # personal room
     join_room(get_channel(userinfo['room_id'], userinfo['play_id']))
+
+
+@socketio.on('leave_user')
+def leave_chatroom():
+    if 'uid' not in session:
+        return redirect(url_for('login'))
+
+    userinfo = get_userinfo(session['uid'])
+    # big room
+    leave_room(get_channel(userinfo['room_id'], None))
+    # personal room
+    leave_room(get_channel(userinfo['room_id'], userinfo['play_id']))
 
 
 @socketio.on('msg')

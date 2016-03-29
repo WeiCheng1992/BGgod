@@ -10,6 +10,7 @@ class Guard(Character):
         self.__guard = None
 
     def take_action(self, context, cv, room_id=None, play_id=None):
+
         notice('Please choose the person you want to guard!', room_id, play_id)
 
         stage = self.get_stage() + ":" + str(play_id)
@@ -26,7 +27,7 @@ class Guard(Character):
                 else:
                     self.__guard = context[stage][0]
                     del context[stage]
-                break
+                    break
 
         cv.release()
 
@@ -34,3 +35,6 @@ class Guard(Character):
 
     def get_guardee(self):
         return self.__guard
+
+    def fate_action(self, room_id):
+        pass

@@ -6,11 +6,6 @@ $(document).ready(function(){
     var socket = io.connect("http://" + document.domain + ':' + location.port);
     socket.emit("join_user");
 
-
-    socket.on("broadcast", function(msg) {
-        document.getElementById("dial").innerHTML +=  msg['msg'] + "\n";
-    });
-
     socket.on("notice", function(msg) {
         document.getElementById("dial").innerHTML +=  msg['msg'] + "\n";
     });
@@ -24,6 +19,9 @@ $(document).ready(function(){
         alert(msg['msg']);
     });
 
+    socket.on("end",function(msg){
+
+    });
 
     $("form#input").submit(function(event) {
         var input = document.getElementById("input_content").value ;

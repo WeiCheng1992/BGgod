@@ -12,8 +12,6 @@ class Witch(Character):
         self.__poison = True
 
     def take_action(self, context, cv, room_id=None, play_id=None):
-        if not self.is_alive():
-            return None
 
         ans = []
         dead = context['to be dead']
@@ -23,7 +21,7 @@ class Witch(Character):
 
         cv.acquire()
         del context['to be dead']
-        if self.__antidote:
+        if dead is not None and self.__antidote:
             notice('Do you want save his life(0 for no,1 for yes)', room_id, play_id)
             while True:
                 if stage not in context:
@@ -41,6 +39,8 @@ class Witch(Character):
                     else:
                         notice('(0 for no,1 for yes)', room_id, play_id)
                         del context[stage]
+        else:
+            ans.append(0)
 
         if self.__poison:
             notice('You have a poison,Do you want to kill someone? ( -1 for nobody)', room_id, play_id)
@@ -57,7 +57,12 @@ class Witch(Character):
                         self.__poison = False
                         del context[stage]
                         break
+        else:
+            ans.append(-1)
 
         cv.release()
 
         return ans
+
+    def fate_action(self, room_id):
+        pass

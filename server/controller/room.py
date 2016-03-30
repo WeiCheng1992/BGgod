@@ -1,7 +1,7 @@
 from flask import render_template, session, request, redirect, url_for, flash
 
 from server import app
-from server.game.werewolf.werewolf_manager import create_room as manager_create, get_userinfo, enter_room as manager_enter
+from server.game.game_manager import create_room as manager_create, get_userinfo, enter_room as manager_enter
 
 
 @app.route('/open_room', methods=['GET'])
@@ -27,9 +27,13 @@ def create_room():
     hunter = 0 if request.form.get('hunter', 0) == 0 else 1
     witch = 0 if request.form.get('witch', 0) == 0 else 1
 
-    room_id = manager_create(people, wolf, villager, cupid, prophet, guard, hunter, witch)
-
-    return redirect(url_for('enter_room', room_id=room_id))
+    try:
+        room_id = manager_create(people, wolf, villager, cupid, prophet, guard, hunter, witch)
+    except Exception as e:
+        flash(e.message)
+        return redirect(url_for('open_room'))
+    else:
+        return redirect(url_for('enter_room', room_id=room_id))
 
 
 @app.route('/enter_room', methods=['POST'])

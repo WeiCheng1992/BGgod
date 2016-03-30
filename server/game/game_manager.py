@@ -75,31 +75,19 @@ def game_begin(room_id):
     _ROOMS[room_id].start()
 
 
-def start_night(room_id):
+def next_round(room_id):
 
-    global _ROOMS
+    global _ROOMS, _USERS
 
-    _ROOMS[room_id].next_night()
-
-
-def start_day(room_id):
-
-    global _ROOMS
-
-    _ROOMS[room_id].next_day()
+    if _ROOMS[room_id].next_round():
+        for i in range(_ROOMS[room_id].get_peoplenum()):
+            uid = _ROOMS[room_id].get_user(i)
+            del _USERS[uid]
+        del _ROOMS[room_id]
+        end(room_id)
 
 
 def set_info(room_id, play_id, msg):
     global _ROOMS
 
     _ROOMS[room_id].set_info(msg, play_id)
-
-
-def game_end(room_id):
-    global _ROOMS, _USERS
-    if room_id in _ROOMS:
-        for i in range(_ROOMS[room_id].get_peoplenum()):
-            uid = _ROOMS[room_id].get_user(i)
-            del _USERS[uid]
-        del _ROOMS[room_id]
-        end(room_id)

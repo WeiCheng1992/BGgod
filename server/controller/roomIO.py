@@ -1,12 +1,12 @@
 import threading
 
+from flask import copy_current_request_context
 from flask import session, redirect, url_for
 from flask_socketio import join_room, leave_room
-from flask import copy_current_request_context
 
 from server import socketio
-from server.game.werewolf.werewolf_manager import game_begin, start_night, start_day
-from server.game.werewolf.werewolf_manager import get_userinfo, set_info
+from server.game.game_manager import game_begin, next_round
+from server.game.game_manager import get_userinfo, set_info
 from server.utils.socket_utils import get_channel
 
 
@@ -47,23 +47,13 @@ def begin(room_id):
     t.start()
 
 
-@socketio.on('night')
+@socketio.on('next')
 def night(room_id):
 
     @copy_current_request_context
-    def night_wrapper(room_id):
-        start_night(room_id)
+    def next_wrapper(room_id):
+        next_round(room_id)
 
-    t = threading.Thread(target=night_wrapper, args=(int(room_id), ))
+    t = threading.Thread(target=next_wrapper, args=(int(room_id), ))
     t.start()
 
-
-@socketio.on('day')
-def day(room_id):
-
-    @copy_current_request_context
-    def day_wrapper(room_id):
-        start_day(room_id)
-
-    t = threading.Thread(target=day_wrapper, args=(int(room_id), ))
-    t.start()

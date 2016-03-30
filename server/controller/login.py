@@ -1,7 +1,7 @@
 from flask import render_template, session, request, redirect, url_for, flash
 
 from server import app
-from server.game.werewolf.werewolf_manager import get_userinfo
+from server.game.game_manager import get_userinfo
 from server.model.db_manager import get_user, add_user
 
 

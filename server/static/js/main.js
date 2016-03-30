@@ -51,13 +51,8 @@ $(document).ready(function(){
         return false;
     });
 
-    $("form#night").submit(function(event) {
-        socket.emit("night",room_id);
-        return false;
-    });
-
-    $("form#day").submit(function(event) {
-        socket.emit("day",room_id);
+    $("form#next").submit(function(event) {
+        socket.emit("next",room_id);
         return false;
     });
 });

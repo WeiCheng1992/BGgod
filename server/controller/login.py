@@ -9,6 +9,7 @@ from server.model.db_manager import get_user, add_user
 @app.route('/index', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login():
+    app.logger.info("hi")
     if 'uid' in session:
         user = get_userinfo(session['uid'])
         if user is not None:
@@ -29,6 +30,7 @@ def signon():
         session['uid'] = user.get_uid()
         session['username'] = user.get_username()
         session['password'] = user.get_password()
+        app.logger.info("user %s login.", session['username'])
 
     return redirect(url_for('login'))
 
@@ -60,6 +62,7 @@ def signup():
         session['uid'] = user.get_uid()
         session['username'] = user.get_username()
         session['password'] = user.get_password()
+        app.logger.info("user %s register and login.", session['username'])
 
     return redirect(url_for('login'))
 
